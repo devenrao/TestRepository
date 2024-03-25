@@ -9,4 +9,4 @@ project(
   ])  
 
 cpp = meson.get_compiler('cpp')
-subdir('multiffdc')
+subdir('collectdump')

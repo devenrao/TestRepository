@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.ibm.com/devenrao/hostfw
+revision = phal3 
+
+[provide]
+hostfw = hostfw_dep 

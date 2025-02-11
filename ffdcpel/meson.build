@@ -13,9 +13,8 @@ pdbg_deps = [
     cxx.find_library('fdt'),
     cxx.find_library('ekb'),
     cxx.find_library('dt-api'),
-    cxx.find_library('phal'),
-    cxx.find_library('hostfw_ipl'),
-    cxx.find_library('hostfw_hwpf'),
+    cxx.find_library('phal')
+    cxx.find_library('ipl')
 ]
 
 systemd = dependency('systemd')
@@ -26,8 +25,8 @@ phosphor_logging = dependency(
     )
 
 executable(
-    'startcbs',
-    'p12startcbs.cpp',
-    install:true,
-    dependencies: [sdbusplus, pdbg_deps, systemd, phosphor_logging],
+    'ffdcpel',
+    'ffdcpel.cpp',
+    dependencies: [ sdbusplus, pdbg_deps, systemd, phosphor_logging ],
+	install:true,
 )

@@ -308,14 +308,15 @@ int main()
 
     constexpr uint16_t ODYSSEY_CHIP_ID = 0x60C0;        
     struct pdbg_target *ocmb;
-    pdbg_for_each_target("ocmb", NULL, ocmb)
+    //pdbg_for_each_target("ocmb", NULL, ocmb)
+    pdbg_for_each_target("proc", NULL, ocmb)
     {
         uint32_t chipId = 0;
         pdbg_target_get_attribute(ocmb, "ATTR_CHIP_ID", 4, 1, &chipId);
     	uint32_t proc = pdbg_target_index(pdbg_target_parent("proc", ocmb));
 	    uint64_t val = 0;
 	    std::cout << "found ocmb target with index " << pdbg_target_index(ocmb) << std::endl;
-	    if(chipId == ODYSSEY_CHIP_ID)
+	    //if(chipId == ODYSSEY_CHIP_ID)
 	    {
 			pdbg_target_probe(ocmb);
 			if (pdbg_target_status(ocmb) != PDBG_TARGET_ENABLED)

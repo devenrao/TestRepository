@@ -26,8 +26,8 @@ phosphor_logging = dependency(
     )
 
 executable(
-    'startcbs',
-    'p12startcbs.cpp',
+    'p12istep',
+    'p12istep.cpp',
     install:true,
     dependencies: [sdbusplus, pdbg_deps, systemd, phosphor_logging],
 )

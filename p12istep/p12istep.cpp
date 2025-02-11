@@ -62,14 +62,15 @@ static int print_target(struct pdbg_target* target, void* /* priv */)
 
 inline struct pdbg_target* get_pib_target(struct pdbg_target* target)
 {
-    struct pdbg_target* pib = NULL;
+    struct pdbg_target* pibtarget = NULL;
 
     /* We assume each processor chip contains one and only one pib */
-    pdbg_for_each_target("pib", target, pib)
+    pdbg_for_each_target("pib", target, pibtarget)
     {
         break;
     }
 
+    struct pib* pib = target_to_pib(pibtarget);
     if (!pib)
     {
         std::cout << "No pib target associated with target %s"
@@ -128,17 +129,12 @@ int main()
             std::cout << "pib target for hub chip not enabled " << std::endl;
             return -1;
         }
-        std::cout << "invoking ps_sppe_config_update HWP" << std::endl;
-        int ret = ipl::ps_sppe_config_update(hubchip);
+        std::cout << "invoking sbe_istep 0 0 HWP" << std::endl;
+        int ret = sbe_istep(pib, 0, 0);
         if (ret == 0)
         {
-            std::cout << "succes in call to HWP ps_sppe_config_update "
+            std::cout << "succes in call to sbe_istep"
                       << std::endl;
-        }
-        ret = ipl::ps_cbs_start(hubchip);
-        if (ret == 0)
-        {
-            std::cout << "sucess in call to ps_cbs_start " << std::endl;
         }
         break;
     }

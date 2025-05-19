@@ -27,4 +27,5 @@ executable(
     'createodypel',
     'createodypel.cpp',
     dependencies: [ sdbusplus, pdbg_deps, systemd, phosphor_logging ],
+    install:true,
 )

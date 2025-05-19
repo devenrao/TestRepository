@@ -24,8 +24,7 @@ extern "C" {
 
 using namespace phosphor::logging;
 using namespace openpower::phal;
-using CreateFFDCFormat =
-    sdbusplus::xyz::openbmc_project::Logging::server::Create::FFDCFormat;
+
 void pdbgLogCallback(int, const char* fmt, va_list ap)
 {
     va_list vap;
@@ -43,7 +42,25 @@ using FFDCInfo = std::vector<std::tuple<
 constexpr auto loggingObjectPath = "/xyz/openbmc_project/logging";
 constexpr auto loggingInterface = "xyz.openbmc_project.Logging.Create";
 constexpr auto opLoggingInterface = "org.open_power.Logging.PEL";
+namespace sdbus = sdbusplus::common::xyz::openbmc_project::logging;
+inline sdbus::Create::FFDCFormat toFFDCFormat(errl::FFDCFormat format)
+{
+    using FFDCFormat = sdbus::Create::FFDCFormat;
 
+    switch (format)
+    {
+        case errl::FFDCFormat::JSON:
+            return FFDCFormat::JSON;
+        case errl::FFDCFormat::CBOR:
+            return FFDCFormat::CBOR;
+        case errl::FFDCFormat::Text:
+            return FFDCFormat::Text;
+        case errl::FFDCFormat::Custom:
+            return FFDCFormat::Custom;
+        default:
+            throw std::invalid_argument("Invalid UserDataFormat enum value");
+    }
+}
 std::string getService(sdbusplus::bus::bus& bus, const std::string& intf,
                        const std::string& path)
 {
@@ -127,14 +144,14 @@ int main()
         pdbg_target_probe(proc);
         if (pdbg_target_status(proc) != PDBG_TARGET_ENABLED)
         {
-            std::cout << "ocmb chip not enabled " << std::endl;
+            std::cout << "proc chip not enabled " << std::endl;
             return -1;
         }
         try
         {
-            std::cout << "ffdcpel before calling createSbeBootFailure "
+            std::cout << "ffdcpel before calling poz_sbe_chipop_failure"
                       << std::endl;
-            auto errlHandle = errl::factory::createSbeBootFailure(proc);
+            auto errlHandle = errl::factory::createPozSbeChipOpFailure(proc);
             if (errlHandle && *errlHandle)
             {
                 const auto& entries =
@@ -158,17 +175,20 @@ int main()
                             for (const auto& pair : *filesOpt)
                             {
                                 const auto& pelFfdc = pair.first;
-
-                                const CreateFFDCFormat format =
-                                    static_cast<CreateFFDCFormat>(
-                                        pelFfdc.format);
+                                // const CreateFFDCFormat format =
+                                // sdbusplus::xyz::openbmc_project::Logging::
+                                //         server::Create::FFDCFormat::Custom;
                                 ffdcInfo.emplace_back(std::make_tuple(
-                                    format, pelFfdc.subType, pelFfdc.version,
+                                    toFFDCFormat(pelFfdc.format),
+                                    pelFfdc.subType, pelFfdc.version,
                                     pelFfdc.fd));
+
                                 std::cout
-                                    << "ffdcpel createSbeBootFailure "
+                                    << "**ffdcpozpel createSbeBootFailure "
+                                       "pelFfdc.fd "
                                     << pelFfdc.fd << " subtpe "
-                                    << pelFfdc.subType << " format "
+                                    << static_cast<uint16_t>(pelFfdc.subType)
+                                    << " format "
                                     << static_cast<uint16_t>(pelFfdc.format)
                                     << "pelFfdc.version"
                                     << static_cast<uint16_t>(pelFfdc.version)

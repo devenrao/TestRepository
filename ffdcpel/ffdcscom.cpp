@@ -21,11 +21,10 @@
 extern "C" {
 #include "libpdbg.h"
 }
-
+#include <sbe_intf.H>
 using namespace phosphor::logging;
 using namespace openpower::phal;
-using CreateFFDCFormat =
-    sdbusplus::xyz::openbmc_project::Logging::server::Create::FFDCFormat;
+
 void pdbgLogCallback(int, const char* fmt, va_list ap)
 {
     va_list vap;
@@ -117,14 +116,11 @@ int main()
     pdbg_set_loglevel(PDBG_DEBUG);
     pdbg_set_logfunc(pdbgLogCallback);
 
-    // pdbg_target_probe_all(pdbg_target_root());
+    pdbg_target_probe_all(pdbg_target_root());
     std::cout << "ffdcpel before looking for proc target " << std::endl;
     struct pdbg_target* proc;
-    using Level =
-        sdbusplus::xyz::openbmc_project::Logging::server::Entry::Level;
     pdbg_for_each_target("proc", NULL, proc)
     {
-        pdbg_target_probe(proc);
         if (pdbg_target_status(proc) != PDBG_TARGET_ENABLED)
         {
             std::cout << "ocmb chip not enabled " << std::endl;
@@ -132,75 +128,17 @@ int main()
         }
         try
         {
-            std::cout << "ffdcpel before calling createSbeBootFailure "
-                      << std::endl;
-            auto errlHandle = errl::factory::createSbeBootFailure(proc);
-            if (errlHandle && *errlHandle)
             {
-                const auto& entries =
-                    (*errlHandle)
-                        ->getEntries(); // or wherever you call getEntries()
-                std::cout << "ffdcpel createSbeBootFailure entries size "
-                          << entries.size() << std::endl;
-                for (const auto& entryPtr : entries)
-                {
-                    if (entryPtr) // Always good to check for non-null
-                    {
-                        const auto& msg = entryPtr->getMessage();
-                        const auto& data = entryPtr->getAdditionalData();
-                        const auto& filesOpt = entryPtr->getFfdcFiles();
-                        std::cout << "ffdcpel createSbeBootFailure msg " << msg
-                                  << std::endl;
+                FFDCMapOpt ffdc;
+                fapi2::Target<fapi2::TARGET_TYPE_PROC_CHIP> ptarget =
+                    fapi2::Target<fapi2::TARGET_TYPE_PROC_CHIP>(proc);
 
-                        FFDCInfo ffdcInfo;
-                        if (filesOpt)
-                        {
-                            for (const auto& pair : *filesOpt)
-                            {
-                                const auto& pelFfdc = pair.first;
-
-                                const CreateFFDCFormat format =
-                                    static_cast<CreateFFDCFormat>(
-                                        pelFfdc.format);
-                                ffdcInfo.emplace_back(std::make_tuple(
-                                    format, pelFfdc.subType, pelFfdc.version,
-                                    pelFfdc.fd));
-                                std::cout
-                                    << "ffdcpel createSbeBootFailure "
-                                    << pelFfdc.fd << " subtpe "
-                                    << pelFfdc.subType << " format "
-                                    << static_cast<uint16_t>(pelFfdc.format)
-                                    << "pelFfdc.version"
-                                    << static_cast<uint16_t>(pelFfdc.version)
-                                    << std::endl;
-                            }
-                        }
-                        std::cout << "Calling CreatePELWithFFDCFiles"
-                                  << std::endl;
-                        auto level = sdbusplus::xyz::openbmc_project::Logging::
-                            server::convertForMessage(Level::Informational);
-                        auto service = getService(bus, opLoggingInterface,
-                                                  loggingObjectPath);
-                        std::cout << "service name is " << service.c_str()
-                                  << std::endl;
-                        auto method = bus.new_method_call(
-                            service.c_str(), loggingObjectPath,
-                            opLoggingInterface, "CreatePELWithFFDCFiles");
-                        std::cout << "calling bus.call method " << std::endl;
-                        method.append(msg, level, data, ffdcInfo);
-                        auto response = bus.call(method);
-                        // reply will be tuple containing bmc log id, platform
-                        // log id
-                        std::tuple<uint32_t, uint32_t> reply = {0, 0};
-
-                        // parse dbus response into reply
-                        response.read(reply);
-                        int plid = std::get<1>(
-                            reply); // platform log id is tuple "second"
-                        std::cout << "ffdcpel createSbeBootFailure plid "
-                                  << plid << std::endl;
-                    }
-                }
+                auto ret = sbei::getScom(ptarget, 0x1, 0x10012, data, primary,
+                                         secondary, &ffdc);
+                uint64_t value = std::bit_cast<uint64_t>(data);
+                std::cout << std::hex << "0x" << value << std::endl;
+                std::cout << "Primary Status  : " << primary << std::endl;
+                std::cout << "Secondary Status: " << secondary << std::endl;
             }
         }
         catch (const std::exception& ex)

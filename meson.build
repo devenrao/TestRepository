@@ -11,3 +11,4 @@ project(
 cpp = meson.get_compiler('cpp')
 subdir('ffdcpel')
 subdir('createodypel')
+subdir('pdbg_targeting')

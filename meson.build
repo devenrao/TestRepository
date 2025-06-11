@@ -1,6 +1,7 @@
 project(
   'sdeventplus',
   'cpp',
+  'c',
   version: '0.1',
   meson_version: '>=1.0.1',
   default_options: [
@@ -9,5 +10,4 @@ project(
   ])  
 
 cpp = meson.get_compiler('cpp')
-subdir('ffdcpel')
-subdir('createodypel')
+subdir('pdbg_targeting')

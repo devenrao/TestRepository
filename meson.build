@@ -10,4 +10,4 @@ project(
   ])  
 
 cpp = meson.get_compiler('cpp')
-subdir('pdbg_targeting')
+subdir('performance')
